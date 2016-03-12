@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 __author__ = 'Michalis'
-__version__ = '0.13.0702'
+__version__ = '0.13.2701'
 
 import socket
 import re
@@ -1013,36 +1013,45 @@ def enable_kerberos():
     print "> Setup Kerberos"
     cm.update_config({"KDC_HOST": cmx.kerberos['kdc_host'],
                       "SECURITY_REALM": cmx.kerberos['security_realm']})
-    hdfs = cdh.get_service_type('HDFS')
-    zookeeper = cdh.get_service_type('ZOOKEEPER')
-    hue = cdh.get_service_type('HUE')
-    hosts = manager.get_hosts()
 
-    check.status_for_command("Import Admin Credentials",
-                             cm.import_admin_credentials(username=str(cmx.kerberos['kdc_user']),
-                                                         password=str(cmx.kerberos['kdc_password'])))
-    check.status_for_command("Wait for credentials to be generated", cm.generate_credentials())
-    time.sleep(10)
-    check.status_for_command("Stop cluster: %s" % cmx.cluster_name, cluster.stop())
-    check.status_for_command("Stop Cloudera Management Services", cm.get_service().stop())
+    if cmx.api_version >= 11:
+        check.status_for_command("Configure Kerberos for Cluster",
+                                 cluster.configure_for_kerberos(datanode_transceiver_port=1004,
+                                                                datanode_web_port=1006))
+        check.status_for_command("Stop Cloudera Management Services", cm.get_service().stop())
+        # check.status_for_command("Wait for credentials to be generated", cm.generate_credentials())
+        check.status_for_command("Start Cloudera Management Services", cm.get_service().start())
+    else:
+        hdfs = cdh.get_service_type('HDFS')
+        zookeeper = cdh.get_service_type('ZOOKEEPER')
+        hue = cdh.get_service_type('HUE')
+        hosts = manager.get_hosts()
 
-    # Configure all services to use MIT Kerberos
-    # HDFS Service-Wide
-    hdfs.update_config({"hadoop_security_authentication": "kerberos", "hadoop_security_authorization": True})
+        check.status_for_command("Import Admin Credentials",
+                                 cm.import_admin_credentials(username=str(cmx.kerberos['kdc_user']),
+                                                             password=str(cmx.kerberos['kdc_password'])))
+        check.status_for_command("Wait for credentials to be generated", cm.generate_credentials())
+        time.sleep(10)
+        check.status_for_command("Stop cluster: %s" % cmx.cluster_name, cluster.stop())
+        check.status_for_command("Stop Cloudera Management Services", cm.get_service().stop())
 
-    # hdfs-DATANODE-BASE - Default Group
-    role_group = hdfs.get_role_config_group("%s-DATANODE-BASE" % hdfs.name)
-    role_group.update_config({"dfs_datanode_http_port": "1006", "dfs_datanode_port": "1004",
-                              "dfs_datanode_data_dir_perm": "700"})
+        # Configure all services to use MIT Kerberos
+        # HDFS Service-Wide
+        hdfs.update_config({"hadoop_security_authentication": "kerberos", "hadoop_security_authorization": True})
 
-    # Zookeeper Service-Wide
-    zookeeper.update_config({"enableSecurity": True})
-    cdh.create_service_role(hue, "KT_RENEWER", [x for x in hosts if x.id == 0][0])
+        # hdfs-DATANODE-BASE - Default Group
+        role_group = hdfs.get_role_config_group("%s-DATANODE-BASE" % hdfs.name)
+        role_group.update_config({"dfs_datanode_http_port": "1006", "dfs_datanode_port": "1004",
+                                  "dfs_datanode_data_dir_perm": "700"})
 
-    # Example deploying cluster wide Client Config
-    check.status_for_command("Deploy client config for %s" % cmx.cluster_name, cluster.deploy_client_config())
-    check.status_for_command("Start Cloudera Management Services", cm.get_service().start())
-    check.status_for_command("Start cluster: %s" % cmx.cluster_name, cluster.start())
+        # Zookeeper Service-Wide
+        zookeeper.update_config({"enableSecurity": True})
+        cdh.create_service_role(hue, "KT_RENEWER", [x for x in hosts if x.id == 0][0])
+
+        # Example deploying cluster wide Client Config
+        check.status_for_command("Deploy client config for %s" % cmx.cluster_name, cluster.deploy_client_config())
+        check.status_for_command("Start Cloudera Management Services", cm.get_service().start())
+        # check.status_for_command("Start cluster: %s" % cmx.cluster_name, cluster.start())
 
 
 def disable_kerberos():
@@ -1357,7 +1366,7 @@ class ManagementActions:
                 api.post("/cm/trial/begin")
                 # REPORTSMANAGER required after applying license
                 manager("REPORTSMANAGER").setup()
-                manager("REPORTSMANAGER").start()
+                # manager("REPORTSMANAGER").start()
             except ApiException as err:
                 print err.message
 
@@ -1844,7 +1853,7 @@ def main():
             mgmt_roles.append('REPORTSMANAGER')
         manager(*mgmt_roles).setup()
         # "STOP" Management roles
-        # management_roles(*mgmt_services).stop()
+        # manager(*mgmt_roles).stop()
         # "START" Management roles
         manager(*mgmt_roles).start()
 
@@ -1853,7 +1862,7 @@ def main():
         manager.upload_license()
 
     # Begin Trial
-    # management.begin_trial()
+    # manager.begin_trial()
 
     # Step-Through - Setup services in order of service dependencies
     # Zookeeper, hdfs, HBase, Solr, Spark, Yarn,
@@ -1877,22 +1886,6 @@ def main():
     setup_oozie()
     setup_hue()
 
-    # Restart Cluster and Deploy Cluster wide client config
-    cdh.restart_cluster()
-
-    # Other examples of CM API
-    # eg: "STOP" Services or "START"
-
-    cdh('HBASE', 'IMPALA', 'SPARK', 'SOLR', 'FLUME').stop()
-
-    # if cmx.amon_password and cmx.rman_password:
-    #     # Example restarting Management Service
-    #     # management_role.restart_management()
-    #     # or Restart individual Management Roles
-    #     manager(*mgmt_roles).restart()
-    #     # Stop REPORTSMANAGER Management Role
-    #     manager("REPORTSMANAGER").stop()
-
     # Note: setup_easy() is alternative to Step-Through above
     # This this provides an example of alternative method of
     # using CM API to setup CDH services.
@@ -1904,13 +1897,20 @@ def main():
     # setup_yarn_ha()
 
     # Example enable Kerberos
-    # cmx.kerberos = {'kdc_host': '10-0-2-15.example.com',
+    # cmx.kerberos = {'kdc_host': 'mko.vpc.cloudera.com',
     #                 'security_realm': 'HADOOP.EXAMPLE.COM',
     #                 'kdc_user': 'mko/admin@HADOOP.EXAMPLE.COM',
-    #                 'kdc_password': 'password'}
+    #                 'kdc_password': 'Had00p'}
     # enable_kerberos()
     # OR
     # disable_kerberos()
+
+    # Restart Cluster and Deploy Cluster wide client config
+    cdh.restart_cluster()
+
+    # Other examples of CM API
+    # eg: "STOP" Services or "START"
+    cdh('HBASE', 'IMPALA', 'SPARK', 'SOLR', 'FLUME').stop()
 
     print "Enjoy!"
 
