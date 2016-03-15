@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 __author__ = 'Michalis'
-__version__ = '0.13.2701'
+__version__ = '0.13.2702'
 
 import socket
 import re
@@ -39,22 +39,22 @@ def init_cluster():
             raise Exception("Invalid manifest.json")
 
     # Install CDH5 latest version
-    cdh5_url = "%s/cdh5/parcels/%s" % (cmx.archive_url, cmx.cdh_version)
-    print "CDH5 Parcel URL: %s" % cdh5_url
-    cmx.parcel.append(manifest_to_dict(cdh5_url + "/manifest.json"))
+    repo_url = ["%s/cdh5/parcels/%s" % (cmx.archive_url, cmx.cdh_version)]
+    print "CDH5 Parcel URL: %s" % repo_url[0]
+    cmx.parcel.append(manifest_to_dict(repo_url[0] + "/manifest.json"))
 
     # Install GPLEXTRAS5 to match CDH5 version
-    gpl_extras_url = '%s/gplextras5/parcels/%s' % \
-                     (cmx.archive_url, cmx.parcel[0]['version'].split('-')[0])
-    print "GPL Extras parcel URL: %s" % gpl_extras_url
-    cmx.parcel.append(manifest_to_dict(gpl_extras_url + "/manifest.json"))
+    repo_url.append('%s/gplextras5/parcels/%s' %
+                    (cmx.archive_url, cmx.parcel[0]['version'].split('-')[0]))
+    print "GPL Extras parcel URL: %s" % repo_url[1]
+    cmx.parcel.append(manifest_to_dict(repo_url[1] + "/manifest.json"))
 
     cm.update_config({"REMOTE_PARCEL_REPO_URLS": "http://archive.cloudera.com/impala/parcels/latest/,"
                                                  "http://archive.cloudera.com/search/parcels/latest/,"
                                                  "http://archive.cloudera.com/spark/parcels/latest/,"
                                                  "http://archive.cloudera.com/sqoop-connectors/parcels/latest/,"
                                                  "http://archive.cloudera.com/accumulo-c5/parcels/latest,"
-                                                 "%s,%s" % (cdh5_url, gpl_extras_url),
+                                                 "%s" % ",".join([url for url in repo_url if url]),
                       "PHONE_HOME": False, "PARCEL_DISTRIBUTE_RATE_LIMIT_KBS_PER_SECOND": "102400"})
 
     if cmx.cluster_name in [x.name for x in api.get_all_clusters()]:
