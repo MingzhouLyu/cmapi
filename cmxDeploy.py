@@ -1674,15 +1674,15 @@ def parse_options():
         if option.dest == 'host_names':
             print "switch %s value check: %s" % (opt_str, value)
             for host in value.split(','):
-                if not hostname_resolves(host):
+                if not hostname_resolves(host.strip()):
                     exit(1)
             else:
                 cmx_config_options[option.dest] = [socket.gethostbyname(x.strip()) for x in value.split(',')]
         elif option.dest == 'cm_server':
-            print "switch %s value check: %s" % (opt_str, value)
+            print "switch %s value check: %s" % (opt_str, value.strip())
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            cmx_config_options[option.dest] = socket.gethostbyname(value) if \
-                hostname_resolves(value) else exit(1)
+            cmx_config_options[option.dest] = socket.gethostbyname(value.strip()) if \
+                hostname_resolves(value.strip()) else exit(1)
 
             if not s.connect_ex((socket.gethostbyname(value), 7180)) == 0:
                 print "Cloudera Manager Server is not started on %s " % value
