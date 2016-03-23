@@ -1677,7 +1677,7 @@ def parse_options():
                 if not hostname_resolves(host):
                     exit(1)
             else:
-                cmx_config_options[option.dest] = [socket.gethostbyname(x) for x in value.split(',')]
+                cmx_config_options[option.dest] = [socket.gethostbyname(x.strip()) for x in value.split(',')]
         elif option.dest == 'cm_server':
             print "switch %s value check: %s" % (opt_str, value)
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1774,7 +1774,7 @@ def parse_options():
                       callback=cmx_args,
                       help='*Set target node(s) list, separate with comma eg: -w host1,host2,...,host(n). '
                            'Note:'
-                           ' - enclose in double quote, also avoid leaving spaces between commas.'
+                           ' - enclose in double quote.'
                            ' - CM_SERVER excluded in this list, if you want install CDH Services in CM_SERVER'
                            ' add the host to this list.')
 
