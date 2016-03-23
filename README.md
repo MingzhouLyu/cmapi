@@ -51,7 +51,7 @@ Options:
   -w HOST_NAMES, --host-names=HOST_NAMES
                         *Set target node(s) list, separate with comma eg: -w
                         host1,host2,...,host(n). Note: - enclose in double
-                        quote, also avoid leaving spaces between commas. -
+                        quote. -
                         CM_SERVER excluded in this list, if you want install
                         CDH Services in CM_SERVER add the host to this list.
 ```
