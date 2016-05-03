@@ -4,7 +4,7 @@ echo "Set cloudera-manager.repo to CM v5"
 yum clean all
 rpm --import http://archive.cloudera.com/cdh5/redhat/6/x86_64/cdh/RPM-GPG-KEY-cloudera
 wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/cloudera-manager.repo -O /etc/yum.repos.d/cloudera-manager.repo
-yum install -y oracle-j2sdk* cloudera-manager-daemons cloudera-manager-server cloudera-manager-server-db*
+yum install -y oracle-j2sdk* cloudera-manager-{daemons,server,server-db*}
 
 echo "start cloudera-scm-server-db and cloudera-scm-server services"
 service cloudera-scm-server-db start
