@@ -10,13 +10,13 @@ You have a running Cloudera Manager Server. You can use the preferred option as 
 
 #### TL;DR: copy-and-paste below example in RHEL/CentOS
 ``` bash
-sudo yum install -y git python-setuptools
-sudo easy_install pip
-sudo git clone https://github.com/cloudera/cm_api.git -b cm5-5.5.1 $HOME/cm_api && sudo pip install $HOME/cm_api/python
-sudo curl -L https://raw.githubusercontent.com/gdgt/cmapi/master/bootstrap-cm.sh | sudo bash
-sudo curl -L https://raw.githubusercontent.com/gdgt/cmapi/master/cmxDeploy.py -o $HOME/cmxDeploy.py && sudo chmod +x $HOME/cmxDeploy.py
-sudo python $HOME/cmxDeploy.py -u "root" -p "cloudera" -m "$(hostname -f)" -w "$(hostname -f)"
-# OR sudo python $HOME/cmxDeploy.py -u "root" -p "cloudera" -m "cm-ip" -w "ip1,ip2,ip3,..."
+yum install -y git python-setuptools
+easy_install pip
+git clone https://github.com/cloudera/cm_api.git -b cm5-5.7.0 $HOME/cm_api && pip install $HOME/cm_api/python
+curl -L https://raw.githubusercontent.com/gdgt/cmapi/master/bootstrap-cm.sh | bash
+curl -L https://raw.githubusercontent.com/gdgt/cmapi/master/cmxDeploy.py -o $HOME/cmxDeploy.py && chmod +x $HOME/cmxDeploy.py
+python $HOME/cmxDeploy.py -u "root" -p "cloudera" -m "$(hostname -f)" -w "$(hostname -f)"
+# OR python $HOME/cmxDeploy.py -u "root" -p "cloudera" -m "cm-ip" -w "ip1,ip2,ip3,..."
 ```
 - SSH credentials - this allows CM to configure the rest of the hosts -u/--ssh-root-user, -p/--ssh-root-password **OR** -k/--ssh-private-key
 - create Hive in embedded PosgreSQL database, bash script provided below (also included in [bootstrap-cm.sh](https://github.com/gdgt/cmapi/blob/master/bootstrap-cm.sh#L13-L21)). 
