@@ -1882,7 +1882,7 @@ def main():
     # setup_sentry()
     setup_sqoop()
     setup_sqoop_client()
-    setup_impala(enable_llama=False)
+    setup_impala()
     setup_oozie()
     setup_hue()
 
